@@ -1,0 +1,259 @@
+In serverless we dont have to worry about Infrastructure.
+Instead we use AWS Lambda.
+
+To create an API
+
+we will define on which method we will respond in the editor
+
+In API Gateway
+New API
+give name
+create API
+From Actions dropdown
+create resource (url -segment)
+It will give path
+create resource
+create method
+to which method we want to respond
+Options 
+1) Lambda Function
+2) Mock (dummy)
+3) Forward it to other HTTP Endpoint
+Here we can define request and response we want to return
+In integration response
+click on body mapping templates
+application/json
+return new data
+or you can modify the data
+click on Actions
+Deploy API
+create a stage -> allowed to manage different versions of API
+Deploy
+we will get a url
+append the Endpoint
+
+
+For a static App [E.g Angular / React App] (No server side code) -> Use s3
+we just need to configure s3 as it is just certain html/css/js files
+
+API -> REST API -> API Gateway.
+Logic for API -> Execute code on demand -> AWS Lambda
+Data -> Store and retrive data -> DynamoDB
+Auth -> Authneticate Users -> Cognito
+DNS -> Translate Url -> Route 53.
+cache -> Improve Performance -> Cloudfront 
+
+
+API Gateway allows us to create an API easily.
+We define API Endpoints -> when request hits that endpoint we can do any Actions
+like Access some AWS Services
+Run Lambda Code.
+
+Features.
+
+API Key - If our API is exposed and other Developers are using them..
+Usage plans to restrict the developers or impose a limit.
+
+Custom domain names allows use
+that instead of amazons URL we can instead have our URL.
+
+Settings -> Generate Log files etc.
+
+
+New Resource = New Path.
+Path that will be appended to the root url.
+
+For your changes to get reflected you need to deploy API.
+
+Stages are like snapshots of your API.
+
+In stages you cannot edit the API.
+You get info about API.
+
+Authorizers are used to add Authentication to your API.
+
+Models allow you to change the shape of your data your work with.
+
+Model allows you to define schema to which your data should adhere to.
+
+Documentation is useful if you want to expose your API to other developers.
+
+Binary support is important if we want to send files along with your request.
+
+Binary media type now comes in settings.
+
+Test is used to actually Test your request without going to Postman and hit it.
+
+Method Request depicts how incoming request should look like.
+
+In method request we can reject the request which is not authorized.
+
+we can validate the request.
+
+validate the url parameters
+validate http request headers
+validate request body -> we can attach models to validate the body.
+
+Now we reach to Integration Request.
+It is about mapping incoming data / transforming iinto the shape we want to use on the action 
+we want to trigger 
+
+Integration Response allows us to configure the response we are sending back.
+It takes the data which can action created and can modify it.
+
+Method Response defines the shape of our response
+E.g Header we want to send back.
+But the value for that header will be filled by INtegration Response.
+
+Proxy Resource means it will catch all the incoming requests.
+
+CORS should be enabled to allow other servers to access our API.
+When we enable that we will have a method OPTIONS which is a pre flight request that the browsers sent.
+
+AWS Lambda is on demand code execution service.
+We can trigger it in any EVent Source.
+
+E.g: S3 (When file gets uploaded)
+CloudWatch 
+API Gateway (when request hits)
+
+Code will execute and a callback function will return the values and interact with other AWS Service.
+
+when we click Use Lambda Proxy Iintegration
+whole request will be forwarded to Lambda instead of just body.
+
+When we enable Lambda Proxy..Integration Response will be grayed out
+Instead we have to send headers and response from lambda.
+
+To access lambda logs we need to go to CloudWatch
+
+we define what should be forwarded to lambda by defining body template.
+
+Aws API gateway body mapping template
+
+In Integration Response we can control in what data format are we going to send the data.
+
+When you want to send GET request and for variable types you do it with
+{type}
+and that type can be sent to lambda function by 
+
+{
+    "type": "$input.params('type')"
+}
+
+and you can then use it in lambda function as
+event.type
+
+We have to set CORS and deploy the API.
+
+In Model we need to select content-type as application/json.
+
+
+DynamoDB is a NoSQL Database.
+
+NoSQL have key value stores and we no have any schema.
+
+In dynamoDB we always require a partition key.
+
+UserID is partition key.  <- Primary Key
+Ih has to be on each item and unique.
+
+Partition key + sort key can be used.
+sort key -> can be timestamp
+
+Local secondary index means partition key + attribute which is unique.
+
+An Attribute name can be a Global Secondary Index.
+
+NoSQL is easy to scale compared to SQL.
+
+we can trigger AWS Lambda function when change occurs in Dynamo DB.
+Acces Dynamo DB as a Data Repository to store and relieve data from AWS LAmbda.
+
+In Dynamo DB Items column is used to enter columns.
+
+In DynamoDB there can be onlly one database per region.
+You can create multiple tables though.
+
+To access DynamoDB from Lambda function we can use aws-sdk.
+In Lamda console it is available.
+But for using it in local machine you need to download it.
+
+const AWS = require('aws-sdk');
+const dynamodb = new AWS.DynamoDB({region : 'ap-south-1' ,  apiVersion : '2012-08-10'});
+
+exports.handler = (event, context, callback) => {
+    console.log(event);
+    const age = event.age;
+    callback(null, age);
+};
+
+Due to internal structure of AWS we kept Connecting the DynamoDB outside the export function.
+
+In DynamoDb we need to send string as value and it will automatically
+convert string into respective values.
+
+const AWS = require('aws-sdk');
+const dynamodb = new AWS.DynamoDB({region : 'ap-south-1' ,  apiVersion : '2012-08-10'});
+
+exports.handler = (event, context, callback) => {
+    
+    const params = {
+        Item:{
+            "UserId":{
+                S : "user_" + Math.random()
+            },
+            "Age":{
+                N : event.age // This should be string
+            },
+            "Height":{
+                N : event.height
+            },
+            "Income":{
+                N : event.income
+            }
+            
+        },
+        TableName : "compare-yourself"
+        
+    }
+    
+    dynamodb.putItem(params , function(err , data){
+        if(err){
+            console.log("LOL",err);
+            callback(err);
+        }else{
+            console.log("inisde");
+            console.log(data);
+            callback(null , data);
+        }
+    })
+    
+};
+
+From Integration Response
+
+#set($inputRoot = $input.path('$'))
+{
+    "your-age" : $inputRoot
+}
+
+query() function takes conditions into account whilst searching ,
+scan() after reading all the items.
+
+scan() returns data only upton 1 MB and after that it gives
+LastEvaluated Key
+
+we can give least access to Resource
+by using roles and permissions.
+
+First create policy
+and then attach it to roles
+and select roles in amazon resources 
+
+
+
+
+
+
+
